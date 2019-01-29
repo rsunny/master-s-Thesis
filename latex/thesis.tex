@@ -1,0 +1,165 @@
+\documentclass{article}
+\usepackage[left=3cm, right=5cm, top=2cm, bottom=4cm]{geometry}
+\usepackage[linesnumbered,lined,boxed,commentsnumbered]{algorithm2e}
+
+
+\SetKwInOut{Parameter}{parameter}
+
+\begin{document}
+ \begin{flushleft}
+
+\section{Required Variables}
+
+In this section we refer all the variables with its type definition and 
+data it stores that are used in the algorithm.
+
+\subsection{reducedStr}
+
+Type: Character Array
+
+\subsubsection*{Description}
+This stores the reduced format of the input string which is to be compiled.
+It only contains the following characters ('$<$', '$>$', '$=$'). In the algorithm we refer
+'$<$' as yield and '$>$' as a take.
+
+\subsection{nxtIdx}
+
+Type: Integer Array
+
+\subsubsection*{Description}
+This is used to get the next index during an iteration or any other purpose.
+Generally '$i + 1$' is used as the next index for '$i$', but in the algorithm nxtIdx[i] 
+is used as the next index. The array is updated frequently during the run time
+of the algorithm.
+
+\subsection{globalRefernceTable}
+
+Type: *Partition Array (User Defined Class)
+
+\subsubsection*{Description}
+Each element of the array is an reference to a Partition object and each object is responsible for a range of data of reducedStr, and no two elements in the globalRefernceTable are responsible for the same index in  reducedStr. This 
+observation helps us to process the array in parallel since no two elements have a dependency. 
+\linebreak\linebreak
+We use smart pointers to handle the references, so that even in case of a mistake 
+in handling the dangling pointer the memory is properly cleaned. The class structure and kind of data it stores is defined below. 
+
+\subsection{lockTable}
+
+Type: Boolean Array
+
+\subsubsection*{Description}
+ Each element of the array represents the respective element in the 
+globalRefernceTable. If the element in lockTable is $True$, it implies that the respective
+array element of globalRefernceTable is still under process and the process wants to use it must either wait until it gets finished or can move on with any other element.
+
+\newpage
+
+\section{Functions Used}
+
+The purpose of this section is to define all the functions that are used in the algorithm.
+
+\subsection{Solver}
+
+Arguments: Integer idx, Functor process | Return Type: void
+
+\subsubsection*{Description}
+This function takes the index (idx) of the globalReferenceTable and applies the function which is passed as an argument (process) to it. This locks the respective index as long as the process is taking place. The function 'process' contains the logic on how the reduction happens. All the solvers for each index is called in parallel.
+
+
+\subsection{hasYields}
+
+Arguments: Integer idx1, Integer Idx2 | Return Type: boolean
+
+\subsubsection*{Description}
+This function returns boolean value depending on whether there exists an 'yield' in the given range (idx1, idx2).
+
+
+\subsection{hasTakes}
+
+Arguments: Integer idx1, Integer Idx2 | Return Type: boolean
+
+\subsubsection*{Description}
+This function returns boolean value depending on whether there exists a 'take' in the given range (idx1, idx2).
+
+
+\subsection{InitData}
+
+Arguments: String reducedStr | Return Type: void
+
+\subsubsection*{Description}
+This function creates Partition objects with proper construction and assign them to respective globalReferenceTable indexes. Respective solver is applied on each of those indexes.
+
+\subsection{Handler}
+
+Arguments: Integer size | Return Type: void
+
+\subsubsection*{Description}
+This takes the size of the globalReferenceTable as the argument and executes multiple iterations as long as the size reduces to 1. In each iteration, some of the indices of globalReferenceTable will be merged which leads to reduction in size.
+
+\subsection{Merger}
+
+Arguments: Integer idx1, Integer idx2 | Return Type: void
+
+\subsubsection*{Description}
+This takes two consecutive indices of the globalReferenceTable and merge the data in them optimally. This is how reductions happen in the program. This function is also responsible for the updates in the nxtIdx array.
+
+\newpage
+
+\section{Pseudo Code}
+
+In this section we define the pseudo codes of all the functions that are mentioned 
+in the previous section.
+
+\subsection{Solver}
+
+Required variables:
+
+\IncMargin{1em}
+\begin{algorithm}
+\caption{solver}\label{algo_disjdecomp}
+\end{algorithm}\DecMargin{1em}
+
+\newpage
+
+\subsection{InitData}
+
+Required variables:
+
+\IncMargin{1em}
+\begin{algorithm}
+
+% Variables used in the function
+\SetKwData{GT}{globalReferenceTable}
+\SetKwData{RS}{reducedStr}
+\SetKwData{RK}{randomK}
+\SetKwData{yield}{yield}
+\SetKwData{take}{take}
+
+% External functions used in the function
+\SetKwFunction{Solver}{solver}
+\SetKwFunction{Partition}{Partition}
+\SetKwFunction{Rand}{rand}
+\SetKwFunction{hasYield}{hasYield}
+\SetKwFunction{hasTake}{hasTake}
+\SetKwFunction{max}{max}
+
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\Input{Reduced string of the given input text}
+\Output{Void, \GT is instantiated and \Solver is applied for each element in \GT}
+\BlankLine
+$n \leftarrow$ length of  \RS\;
+\RK $\leftarrow$ \Rand{$n$}\;  \tcp{\Rand gives a random value, which is used as the length to make an 
+arbitrary cut}\label{cmt}
+\For{$i\leftarrow 1$ \KwTo $n$}{
+	$idx1$ = $i$\;
+	$idx2$ = \max{$i + k, n$}\;	
+	\yield $\leftarrow$ \hasYield{$idx1, idx2$}\;
+	\take $\leftarrow$ \hasTake{$idx2, idx2$}\;
+	insert into \GT $\leftarrow$ new \Partition{$idx1, idx2, yield, take$}\;
+	parallel \Solver{sizeof  \GT}\;
+} 
+\caption{initData}\label{algo_initData}
+\end{algorithm}\DecMargin{3em}
+
+\end{flushleft}
+\end{document}
