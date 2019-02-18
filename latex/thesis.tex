@@ -1,12 +1,25 @@
 \documentclass{article}
 \usepackage[left=3cm, right=5cm, top=2cm, bottom=4cm]{geometry}
 \usepackage[linesnumbered,lined,boxed,commentsnumbered]{algorithm2e}
-
+\usepackage{tikz}
 
 \SetKwInOut{Parameter}{parameter}
 
 \begin{document}
  \begin{flushleft}
+
+\section{Data Structures Used}
+
+\subsection{Partition}
+
+This class stores the information regarding the segment of data. The information stored is first and last index which it is responsible for all elements between these indices. If the segment have a yield, if the segment have a take. 
+\BlankLine
+  \begin{tabular}{ c c }
+    int & firstIdx \\ 
+    int & lastIdx \\
+    boolean & hasYield \\
+    boolean & hasTake \\
+  \end{tabular}
 
 \section{Required Variables}
 
@@ -19,7 +32,7 @@ Type: Character Array
 
 \subsubsection*{Description}
 This stores the reduced format of the input string which is to be compiled.
-It only contains the following characters ('$<$', '$>$', '$=$'). In the algorithm we refer
+It only contains the following characters ('$<$', '$>$', '$=$', $|$). In the algorithm we refer
 '$<$' as yield and '$>$' as a take.
 
 \subsection{nxtIdx}
@@ -112,18 +125,14 @@ in the previous section.
 
 \subsection{Solver}
 
-Required variables:
-
 \IncMargin{1em}
 \begin{algorithm}
-\caption{solver}\label{algo_disjdecomp}
+\caption{solver}\label{algo_solver}
 \end{algorithm}\DecMargin{1em}
 
 \newpage
 
 \subsection{InitData}
-
-Required variables:
 
 \IncMargin{1em}
 \begin{algorithm}
@@ -141,9 +150,11 @@ Required variables:
 \SetKwFunction{Rand}{rand}
 \SetKwFunction{hasYield}{hasYield}
 \SetKwFunction{hasTake}{hasTake}
-\SetKwFunction{max}{max}
+\SetKwFunction{min}{min}
 
-\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Output}{output}
+
 \Input{Reduced string of the given input text}
 \Output{Void, \GT is instantiated and \Solver is applied for each element in \GT}
 \BlankLine
@@ -152,7 +163,7 @@ $n \leftarrow$ length of  \RS\;
 arbitrary cut}\label{cmt}
 \For{$i\leftarrow 1$ \KwTo $n$}{
 	$idx1$ = $i$\;
-	$idx2$ = \max{$i + k, n$}\;	
+	$idx2$ = \min{$i + k, n$}\;	
 	\yield $\leftarrow$ \hasYield{$idx1, idx2$}\;
 	\take $\leftarrow$ \hasTake{$idx2, idx2$}\;
 	insert into \GT $\leftarrow$ new \Partition{$idx1, idx2, yield, take$}\;
@@ -160,6 +171,74 @@ arbitrary cut}\label{cmt}
 } 
 \caption{initData}\label{algo_initData}
 \end{algorithm}\DecMargin{3em}
+
+\newpage
+
+\subsection{Handler}
+
+\IncMargin{3em}
+\begin{algorithm}
+
+% Variables used in the function
+\SetKwData{GT}{globalReferenceTable}
+\SetKwData{LT}{lockTable}
+
+% External functions used in the function
+\SetKwFunction{Solver}{solver}
+\SetKwFunction{Merge}{merge}
+
+\SetKwInOut{Input}{input}
+\SetKwInOut{Output}{output}
+
+\Input{Reduced string of the given input text and the globalReferenceTable}
+\Output{Proper segments are merged together so that some reduction operations happen in the selected segments, and this process is continued until we only have 1 segment left.}
+\BlankLine
+$n \leftarrow$ length of  \GT\;
+\While{$n != 1$}{
+	$x \leftarrow 1$\;
+	$lastYield \leftarrow -1$\;
+	\For{$i \leftarrow 1$ \KwTo $n$}{
+		\uIf{$lastYield == -1$  $and$ \GT[i].hasYields}{	
+			$lastYield \leftarrow i$\;
+			$continue$;\
+		}
+		\uElseIf{$lastYield != -1$ $and$  \GT[i].hasTakes}{
+			\Merge{$lastYield, i$}\;
+			\GT[x] $ \leftarrow $ \GT[lastYield]\;
+			$lastYield \leftarrow -1$\;
+			\uIf{$n != i$} {
+				$x \leftarrow x + 1$\;
+			}
+		}
+		parallel \Solver{sizeof  \GT}\;
+	}
+	$n \leftarrow x$ 
+}
+\caption{handler}\label{algo_handler}
+\end{algorithm}\DecMargin{3em}
+
+\newpage
+
+\subsection{Merger}
+
+\IncMargin{3em}
+\begin{algorithm}
+
+% Variables used in the function
+\SetKwData{GT}{globalReferenceTable}
+\SetKwData{LT}{lockTable}
+
+
+\SetKwInOut{Input}{input}
+\SetKwInOut{Output}{output}
+
+\Input{Takes two indices l and r, reduced string of the given input text and the globalReferenceTable}
+\Output{creates a new partition object merging all the partition objects from range l to r. This new object is stored in l.}
+
+\caption{handler}\label{algo_handler}
+\end{algorithm}\DecMargin{3em}
+
+\newpage
 
 \end{flushleft}
 \end{document}
