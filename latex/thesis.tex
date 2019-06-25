@@ -8,62 +8,62 @@
 \begin{document}
  \begin{flushleft}
 
-\section{Data Structures Used}
+\section{Definitions of terms}
+Describe chunk, yield, take
+
+\section{Data Structures}
 
 \subsection{Partition}
 
-This class stores the information regarding the segment of data. The information stored is first and last index which it is responsible for all elements between these indices. If the segment have a yield, if the segment have a take. 
+Given input string is divided in to multiple chunks. This data structure describes an individual chunk. This says that data beginning from index 'firtIdx' till 'lastIdx' is owned by this chunk. It also holds that data of whether this chunk has any yield and has any take. 'lock' says whether this chuck is being processed by any worker or not. Initially lock is set to false.
 \BlankLine
-  \begin{tabular}{ c c }
-    int & firstIdx \\ 
-    int & lastIdx \\
-    boolean & hasYield \\
-    boolean & hasTake \\
-  \end{tabular}
+	\begin{itemize}
+		\item \texttt{firstIdx}
+		\item \texttt{lastIdx}
+		\item \texttt{hasYield}
+		\item \texttt{hasTake}
+		\item \texttt{lock}
+		\item \texttt{nxt}
+	\end{itemize}
+
+Constructor accepts firstIdx, lastIdx and initialises the object. 'nxt' is used as a reference to the connecting object. If 'nxt' is -1 that implies there is no connecting object.
+
+
+\subsection{Symbol}
+
+This holds an input string in inputStr. It's respective precedence type is taken from the operator precedence grammar matrix and stored in 'precedenceSymbol'.  It only contains the following characters ('$<$', '$>$', '$=$', '$|$').  'nxt' holds the reference to the next element it is pointing to. If 'nxt' is -1, that implies this is the last element in the sequence. 
+\BlankLine
+('$<$', '$>$', '$=$') is used for non-terminals and ('$|$') is used for terminal strings. In the algorithm we refer '$<$' as yield and '$>$' as a take.
+\BlankLine
+	\begin{itemize}
+		\item \texttt{inputStr}
+		\item \texttt{precedenceSymbol}
+		\item \texttt{nxt}
+	\end{itemize}
+
+
+\newpage
 
 \section{Required Variables}
 
 In this section we refer all the variables with its type definition and 
 data it stores that are used in the algorithm.
 
-\subsection{reducedStr}
-
-Type: Character Array
-
-\subsubsection*{Description}
-This stores the reduced format of the input string which is to be compiled.
-It only contains the following characters ('$<$', '$>$', '$=$', $|$). In the algorithm we refer
-'$<$' as yield and '$>$' as a take.
-
-\subsection{nxtIdx}
-
-Type: Integer Array
+\subsection{inputSequence}
+Type: Vector
 
 \subsubsection*{Description}
-This is used to get the next index during an iteration or any other purpose.
-Generally '$i + 1$' is used as the next index for '$i$', but in the algorithm nxtIdx[i] 
-is used as the next index. The array is updated frequently during the run time
-of the algorithm.
+Input given by the user is processed and for each input string respective Symbol object is created. Each element of the array represents the Symbol object added in relevant order. For each symbol initially 'nxt' is initialised with its next element's index. Only exceptional case is the last element which is initialised 'nxt' with -1.
 
-\subsection{globalRefernceTable}
-
-Type: *Partition Array (User Defined Class)
+\subsection{partitionTable}
+Type:  Vector
 
 \subsubsection*{Description}
-Each element of the array is an reference to a Partition object and each object is responsible for a range of data of reducedStr, and no two elements in the globalRefernceTable are responsible for the same index in  reducedStr. This 
+Each element of the array is an reference to a Partition object no two elements in the partitionTable are responsible for the same index in inputSequence. This 
 observation helps us to process the array in parallel since no two elements have a dependency. 
-\linebreak\linebreak
 We use smart pointers to handle the references, so that even in case of a mistake 
 in handling the dangling pointer the memory is properly cleaned. The class structure and kind of data it stores is defined below. 
 
-\subsection{lockTable}
-
-Type: Boolean Array
-
-\subsubsection*{Description}
- Each element of the array represents the respective element in the 
-globalRefernceTable. If the element in lockTable is $True$, it implies that the respective
-array element of globalRefernceTable is still under process and the process wants to use it must either wait until it gets finished or can move on with any other element.
 
 \newpage
 
@@ -73,57 +73,11 @@ The purpose of this section is to define all the functions that are used in the 
 
 \subsection{Solver}
 
-Arguments: Integer idx, Functor process | Return Type: void
+Accepts: idx
+Returns: nothing
 
 \subsubsection*{Description}
-This function takes the index (idx) of the globalReferenceTable and applies the function which is passed as an argument (process) to it. This locks the respective index as long as the process is taking place. The function 'process' contains the logic on how the reduction happens. All the solvers for each index is called in parallel.
-
-
-\subsection{hasYields}
-
-Arguments: Integer idx1, Integer Idx2 | Return Type: boolean
-
-\subsubsection*{Description}
-This function returns boolean value depending on whether there exists an 'yield' in the given range (idx1, idx2).
-
-
-\subsection{hasTakes}
-
-Arguments: Integer idx1, Integer Idx2 | Return Type: boolean
-
-\subsubsection*{Description}
-This function returns boolean value depending on whether there exists a 'take' in the given range (idx1, idx2).
-
-
-\subsection{InitData}
-
-Arguments: String reducedStr | Return Type: void
-
-\subsubsection*{Description}
-This function creates Partition objects with proper construction and assign them to respective globalReferenceTable indexes. Respective solver is applied on each of those indexes.
-
-\subsection{Handler}
-
-Arguments: Integer size | Return Type: void
-
-\subsubsection*{Description}
-This takes the size of the globalReferenceTable as the argument and executes multiple iterations as long as the size reduces to 1. In each iteration, some of the indices of globalReferenceTable will be merged which leads to reduction in size.
-
-\subsection{Merger}
-
-Arguments: Integer idx1, Integer idx2 | Return Type: void
-
-\subsubsection*{Description}
-This takes two consecutive indices of the globalReferenceTable and merge the data in them optimally. This is how reductions happen in the program. This function is also responsible for the updates in the nxtIdx array.
-
-\newpage
-
-\section{Pseudo Code}
-
-In this section we define the pseudo codes of all the functions that are mentioned 
-in the previous section.
-
-\subsection{Solver}
+'idx' refers to the index of the partitionTable. Solver contains the logics of a reducer which is applied on the idx-th index of the 'partitionTable'.
 
 \IncMargin{1em}
 \begin{algorithm}
@@ -132,110 +86,160 @@ in the previous section.
 
 \newpage
 
-\subsection{InitData}
+\subsection{merger}
+
+\subsubsection*{Description}
+
+Accepts: idx1, idx2 \BlankLine
+Returns: nothing \BlankLine
+
+idx1 and idx2 represents two indices of partitionTable which are theoretical consecutive indices. idx1-th index of partitionTable is modified accordingly and passed to the solver. Before passing it to the solver, lock is applied so that no other process can pass it to solver.
+
+\subsubsection*{Pseudo Code}
 
 \IncMargin{1em}
 \begin{algorithm}
 
 % Variables used in the function
-\SetKwData{GT}{globalReferenceTable}
-\SetKwData{RS}{reducedStr}
-\SetKwData{RK}{randomK}
-\SetKwData{yield}{yield}
-\SetKwData{take}{take}
+\SetKwData{PT}{partitionTable}
 
 % External functions used in the function
 \SetKwFunction{Solver}{solver}
-\SetKwFunction{Partition}{Partition}
-\SetKwFunction{Rand}{rand}
-\SetKwFunction{hasYield}{hasYield}
-\SetKwFunction{hasTake}{hasTake}
-\SetKwFunction{min}{min}
 
 \SetKwInOut{Input}{input}
-\SetKwInOut{Output}{output}
 
-\Input{Reduced string of the given input text}
-\Output{Void, \GT is instantiated and \Solver is applied for each element in \GT}
+\Input{idx1, idx2}
 \BlankLine
-$n \leftarrow$ length of  \RS\;
-\RK $\leftarrow$ \Rand{$n$}\;  \tcp{\Rand gives a random value, which is used as the length to make an 
-arbitrary cut}\label{cmt}
-\For{$i\leftarrow 1$ \KwTo $n$}{
-	$idx1$ = $i$\;
-	$idx2$ = \min{$i + k, n$}\;	
-	\yield $\leftarrow$ \hasYield{$idx1, idx2$}\;
-	\take $\leftarrow$ \hasTake{$idx2, idx2$}\;
-	insert into \GT $\leftarrow$ new \Partition{$idx1, idx2, yield, take$}\;
-	parallel \Solver{sizeof  \GT}\;
-} 
-\caption{initData}\label{algo_initData}
-\end{algorithm}\DecMargin{3em}
 
-\newpage
+$ \PT[idx1].lastIdx \leftarrow \PT[idx2].lastIdx$ \; 
+$ \PT[idx1].nxt \leftarrow \PT[idx2].nxt $ \;
 
-\subsection{Handler}
-
-\IncMargin{3em}
-\begin{algorithm}
-
-% Variables used in the function
-\SetKwData{GT}{globalReferenceTable}
-\SetKwData{LT}{lockTable}
-
-% External functions used in the function
-\SetKwFunction{Solver}{solver}
-\SetKwFunction{Merge}{merge}
-
-\SetKwInOut{Input}{input}
-\SetKwInOut{Output}{output}
-
-\Input{Reduced string of the given input text and the globalReferenceTable}
-\Output{Proper segments are merged together so that some reduction operations happen in the selected segments, and this process is continued until we only have 1 segment left.}
-\BlankLine
-$n \leftarrow$ length of  \GT\;
-\While{$n != 1$}{
-	$x \leftarrow 1$\;
-	$lastYield \leftarrow -1$\;
-	\For{$i \leftarrow 1$ \KwTo $n$}{
-		\uIf{$lastYield == -1$  $and$ \GT[i].hasYields}{	
-			$lastYield \leftarrow i$\;
-			$continue$;\
-		}
-		\uElseIf{$lastYield != -1$ $and$  \GT[i].hasTakes}{
-			\Merge{$lastYield, i$}\;
-			\GT[x] $ \leftarrow $ \GT[lastYield]\;
-			$lastYield \leftarrow -1$\;
-			\uIf{$n != i$} {
-				$x \leftarrow x + 1$\;
-			}
-		}
-		parallel \Solver{sizeof  \GT}\;
-	}
-	$n \leftarrow x$ 
+\uIf { \PT[idx1].hasYeilds and \PT[idx2].hasTakes } {
+	$ \PT[idx1].lock \leftarrow True $ \;
+	$ \texttt{async \Solver(idx1)} $ \;
+	 \tcp{Solver is either an async or parallel process.}	
 }
-\caption{handler}\label{algo_handler}
+
+\caption{merger}\label{algo_merger}
 \end{algorithm}\DecMargin{3em}
 
 \newpage
 
-\subsection{Merger}
+\subsection{basicSetup}
+
+\subsubsection*{Description}
+
+Accepts: user input \BlankLine
+Returns: nothing \BlankLine
+
+User input is taken and 'inputSequence' is created out of it. Later inputSequence is broken in to multiple chunks. Each chunk represents a continuous subsequence of inputSequence. No two chunks have an overlap of data. Every chunk is independent to each other. Partition object is created from each chunk and every object is appended to the partitionTable.
+
+\subsubsection*{Pseudo Code}
+
+\IncMargin{1em}
+\begin{algorithm}
+
+% Variables used in the function
+\SetKwData{UI}{userInput}
+\SetKwData{PT}{partitionTable}
+\SetKwData{IS}{inputSequence}
+\SetKwData{BL}{breakLength}
+\SetKwFunction{PRT}{Partition}
+\SetKwFunction{SYM}{Symbol}
+
+% External functions used in the function
+\SetKwFunction{Solver}{solver}
+\SetKwFunction{GetChunkLength}{getChunkLength}
+\SetKwFunction{CreateSymbol}{createSymbol}
+\SetKwFunction{CreatePartition}{createPartition}
+\SetKwFunction{Min}{min}
+
+\SetKwInOut{Input}{input}
+
+\Input{User input}
+\BlankLine
+
+$\texttt{n} \leftarrow$ length of  \UI\;
+$\IS \leftarrow$ initialise array to size $\texttt{n}$.
+
+\BL $\leftarrow$ \GetChunkLength{$\texttt{n}$}\;  \tcp{\GetChunkLength returns a good value is chosen to break the precedence sequence into different chucks where the length of any two different chunks doesn't have a huge difference.}
+
+\For{$\texttt{i} \leftarrow 1$ \KwTo $\texttt{n}$}{
+	adds new \SYM object returned by \CreateSymbol{\UI[\texttt{i}]} to \IS \; 
+	\tcp{Can use async process to speed up.}
+}
+
+\tcp{await until all async calls are successfully executed.}
+
+$\texttt{idx1} \leftarrow 1$\;
+$\texttt{idx2} \leftarrow $ \BL\;
+
+\While{$\texttt{idx2} \le \texttt{n}$}{
+	adds new \PRT object returned by \CreatePartition{$\texttt{idx1}, \texttt{idx2}$} to \PT \;
+	\tcp{Can use async process to speed up.}
+	$\texttt{idx1} \leftarrow \texttt{idx1} + $ \BL \;
+	$\texttt{idx2} \leftarrow $ \Min{$\texttt{idx2 +} $ \BL, $\texttt{n}$} \;
+} 
+
+\caption{basicSetup}\label{algo_basicSetup}
+\end{algorithm}\DecMargin{3em}
+
+\newpage
+
+\subsection{workAssigner}
+
+\subsubsection*{Description}
+
+Accepts: user input \BlankLine
+Returns: nothing \BlankLine
+
+'partitionTable' produced by the basicSetup' is used in this routine. This tries to merge every two consecutively available chunks and reduces that newly created chunk if possible. This process goes until only one chunk is left and no more reductions are possible.
+\BlankLine
+In case of any error or lack of possibility of reduction, appropriate area of the error in the input sequence is alerted.
+
+\subsubsection*{Pseudo Code}
 
 \IncMargin{3em}
 \begin{algorithm}
 
 % Variables used in the function
-\SetKwData{GT}{globalReferenceTable}
-\SetKwData{LT}{lockTable}
+\SetKwData{PT}{partitionTable}
+\SetKwData{IP}{inputSequence}
 
+% External functions used in the function
+\SetKwFunction{Merge}{mergeChunks}
 
 \SetKwInOut{Input}{input}
 \SetKwInOut{Output}{output}
 
-\Input{Takes two indices l and r, reduced string of the given input text and the globalReferenceTable}
-\Output{creates a new partition object merging all the partition objects from range l to r. This new object is stored in l.}
+\Input{\IP and \PT are provided as input arguments}
+\Output{All the partitioned chunks are parsed appropriately and merged together until there is nothing else to parse.}
+\BlankLine
 
-\caption{handler}\label{algo_handler}
+$\texttt{n} \leftarrow$ number of chunks (length of \PT)\;
+$\texttt{cnt} \leftarrow$ number of chunks (length of \PT)\; 
+\tcp{Represents number of available chunks. If number of available chunks is 1, it implies that all the processing is completed.}
+
+\While{$\texttt{cnt} \neq 1$}{
+	$\texttt{idx} \leftarrow 1$ \;
+	$\texttt{nxtIdx} \leftarrow \PT[idx].nxt$ \;
+	
+	\While{$\texttt{idx} \neq -1$}{
+		\uIf {\PT[\texttt{idx}].lock is true} {do nothing \; }
+		\tcp{This implies that the chunk is still being processed.}
+		
+		\uElseIf {\PT[\texttt{nxtIdx}].lock is true }{ do nothing \; }
+		\tcp{This implies that the nxtIdx-th chunk is still being processed and merge can happen only with consecutive chunks (Technically idx and nxtIdx are consecutive) .}
+		
+		\uElse {
+			\Merge{$\texttt{idx, nxtIdx}$}\;	
+			$\texttt{n} \leftarrow \texttt{n - 1}$\;
+		}
+	
+		$\texttt{idx} \leftarrow \PT[idx].nxt$ \;
+	}
+}
+\caption{workAssigner}\label{algo_workAssigner}
 \end{algorithm}\DecMargin{3em}
 
 \newpage
